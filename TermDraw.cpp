@@ -33,7 +33,7 @@
 //                  ────────▀█▌▐█████▌▐█▀────────                    //
 //                  ───────────███████───────────                    //
 ///////////////////////////////////////////////////////////////////////
-//                            blablabla ....
+//                           blablabla ....
 
 /*
  *
@@ -47,22 +47,12 @@
  */
 
 //Design notice///////////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO:
+// 
 //
-// - compute intersections of classic lines
-// - compute intersections of gridcell lines
-// use std::array instead of Vector ?
-// - Maximum Screen terminal resolution ?
-// - Add a frame clear.
-// Design idea:
-//   - Think about making a global screen state
-//     where 2d points are linked to utf8 in order
-//     to globaly quick refresh the whole screen without
-//     recomputing every frames and other sub gridcell
-//     (at this time there is no computing only vectorization)
-//     but on complex display setup this core design idea may improve speed by updating only
-//     the difference betwen two frame (i mean by poping_back only targeted elements)
-//     but that wont be a 60hz movie anyway ...          so may not worth it ...
+//                                            later.
+//
+//
+//
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -100,7 +90,7 @@ struct Cell {
 
 //**********************************************************************************
 // A data structure with all Cells informations for updating the grid cell enclosed
-//   data without recomputing the whole borders intersections and other corners.
+//   data without recomputing the whole borders intersections and others corners...
 //**********************************************************************************
 struct Grid_Cell {
     bool visibility_Border;
@@ -109,6 +99,7 @@ struct Grid_Cell {
     unsigned short max_y;
     std::vector<std::vector<Cell>> Cells_parameters_grid;
 };
+
 
 /// !!! for now size_t allow the max possible range aviable whatever the machine is.
 /// don't want to limit by software design the program ability... (hardware is there for that).
@@ -254,6 +245,7 @@ public:
             }
         }
     }
+
     //#pragma GCC push_options
     //#pragma GCC optimize ("O0")
     //#pragma GCC pop_options
