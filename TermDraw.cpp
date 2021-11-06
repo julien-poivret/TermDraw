@@ -47,12 +47,19 @@
  */
 
 //Design notice///////////////////////////////////////////////////////////////////////////////////////////////////////
-// 
-//
-//                                            later.
-//
-//
-//
+//   
+//        This code is a personal tool mainly developed for my personal use in a way that it's usefull to me
+//        Don't have too much expectations on users hanling exception or so. it's not designed for that.
+//        ***                          will be improve along the way.                                    ***
+//      
+//        if you have any questions: -> poivretjulien@gmail.com
+//        
+//Quick help:
+//       
+//           First init the class,
+//           Add a frame with Add_Frame method  
+//           Then add stuff in frame relative coordinates mode...
+//           have fun !
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
