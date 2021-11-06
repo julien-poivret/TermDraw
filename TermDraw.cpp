@@ -50,7 +50,7 @@
 //   
 //        This code is a personal tool mainly developed for my personal use in a way that it's usefull to me
 //        Don't have too much expectations on users hanling exception or so. it's not designed for that.
-//        ***                          will be improve along the way.                                    ***
+//        ***                          will be improved along the way.                                    ***
 //      
 //        if you have any questions: -> poivretjulien@gmail.com
 //        
