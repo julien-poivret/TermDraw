@@ -98,9 +98,13 @@ struct Cell {
 //**********************************************************************************
 // A data structure with all Cells informations for updating the grid cell enclosed
 //   data without recomputing the whole borders intersections and others corners...
+//Im adding a grid cell id for a better interactivity, in that way you can in the same 
+//   loop update the text content of two grids cell without redrawing the grid cell 
+//   of both data structure.
 //**********************************************************************************
 struct Grid_Cell {
     bool visibility_Border;
+    size_t id;
     struct point2D origin_Pt;
     unsigned short max_x;
     unsigned short max_y;
@@ -166,15 +170,17 @@ public:
 
 
   ///     *** Display the data input in the grid at the right place with the max cell allowed capacity ***
+  /// id -> a sise_t grid cell identification number... first grid cell created in the frame id=0 second id=1 and so on...
+  ///       in that way you can update several grid cell contents in a loop at a given time.
   /// data_input -> vector of 'n' vectors
   /// paging -> size_t, the input vectors is segmented in the right amount of what the grid cells can display
   ///                           ( incressing the number scroll up or down the input data display. )
   /// display_need -> simply give the total column number of the data structure.
-  //                            ( ...that the 'n' vector needed for input... )
-    void FeedGridCell(std::optional<std::vector<std::vector<const char*>>> data_input,size_t paging,bool display_need)
+  ///                            ( ...that the 'n' vector needed for input... )
+    void FeedGridCell(size_t id,std::optional<std::vector<std::vector<const char*>>> data_input,size_t paging,bool display_need)
     {
         if(this->grid_cell_List.has_value()) {
-            struct Grid_Cell& tmp = this->grid_cell_List->back();
+            struct Grid_Cell& tmp = this->grid_cell_List.value()[id];
             if(display_need) {
                 // Erase the first line.
                 int ct = 0;
@@ -273,7 +279,7 @@ public:
             struct Grid_Cell tmp;
 
             // Make the current Frame absolute.
-            auto& frame_origin = this->frame_List.value()[this->frame_List.value().size()-1].origin_Pt;
+            auto& frame_origin = this->frame_List->back().origin_Pt;
             tmp.origin_Pt.x = frame_origin.x + x;
             tmp.origin_Pt.y = frame_origin.y + y;
 
@@ -486,6 +492,8 @@ public:
 
             /// Finaly manage the optional for a nice data structure...
             if(this->grid_cell_List.has_value()) {
+	        // increment the GridCell id.
+	        tmp.id = this->grid_cell_List->size() - 1;
                 // if there are allready some Grid_Cell
                 // then emplace_back (put on the last allready allocated memorry)
                 this->grid_cell_List.value().emplace_back(tmp);
@@ -493,6 +501,8 @@ public:
             else {
                 // if no value then make a first one
                 std::vector<Grid_Cell> stack_grid;
+		// First grid cell -> id = 0.
+		tmp.id = 0;
                 stack_grid.emplace_back(tmp);
                 this->grid_cell_List = stack_grid;
             }
@@ -518,58 +528,65 @@ public:
      *
      */
     void Add_Frame(unsigned short origin_x,unsigned short origin_y,
-                   unsigned short length_x, unsigned short length_y,bool visibility)
+                   unsigned short length_x, unsigned short length_y,bool visibility,bool clear)
     {
         struct Frame tmp;
         tmp.origin_Pt.x = origin_x;
-        tmp.origin_Pt.y = origin_y;
-        tmp.length_x = length_x;
-        tmp.length_y = length_y;
-        // Trace the two verticals.
-        if(visibility) {
-            unsigned short ct = 0;
-            while(ct <= (length_x-1)) {
-                for(unsigned short i=0; i<=(length_y-1); i++) {
-                    std::cout<<"\33["<<origin_y+i<<";"<<origin_x+ct<<"H"<<LIGHT_SOLID_VERTICAL;
-                }
-                ct += (length_x-1);
-            }
-            ct = 0;
-            // Trace the two horizotals.
-            while(ct<=(length_y-1)) {
-                for(unsigned short i=0; i<=(length_x-1); i++) {
-                    // mind the frame corners.
-                    if(i==0 && ct ==0) {
-                        std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_N_WEST;
-                    }
-                    else if(i==(length_x-1) && ct==0) {
-                        std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_N_EST;
-                    }
-                    else if(i==0 && ct==(length_y-1)) {
-                        std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_S_WEST;
-                    }
-                    else if(i==(length_x-1) && ct==(length_y-1)) {
-                        std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_S_EST;
-                    }
-                    else {
-                        std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_LINE;
-                    }
-                }
-                ct += (length_y-1);
-            }
-        }
-        if(this->frame_List.has_value()) {
-            // add a Frame.
-            tmp.id = this->frame_List.value().back().id++;
-            frame_List.value().push_back(tmp);
-        }
-        else {
-            // create a Frame.
-            tmp.id = 0;
-            std::vector<Frame> ListFrame;
-            ListFrame.push_back(tmp);
-            this->frame_List = ListFrame;
-        }
+	tmp.origin_Pt.y = origin_y;
+	tmp.length_x = length_x;
+	tmp.length_y = length_y;
+	// Trace the two verticals.
+	if(clear){
+	  for(int y =0;y<length_y;y++){
+	    for(int x =0;x<length_x;x++){
+	      std::cout<<"\33["<<origin_y+y<<";"<<origin_x+x<<"H ";
+	    }
+	  }
+	}
+	if(visibility) {
+	  unsigned short ct = 0;
+	  while(ct <= (length_x-1)) {
+	    for(unsigned short i=0; i<=(length_y-1); i++) {
+	      std::cout<<"\33["<<origin_y+i<<";"<<origin_x+ct<<"H"<<LIGHT_SOLID_VERTICAL;
+	    }
+	    ct += (length_x-1);
+	  }
+	  ct = 0;
+	  // Trace the two horizotals.
+	  while(ct<=(length_y-1)) {
+	    for(unsigned short i=0; i<=(length_x-1); i++) {
+	      // mind the frame corners.
+	      if(i==0 && ct ==0) {
+		std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_N_WEST;
+	      }
+	      else if(i==(length_x-1) && ct==0) {
+		std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_N_EST;
+	      }
+	      else if(i==0 && ct==(length_y-1)) {
+		std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_S_WEST;
+	      }
+	      else if(i==(length_x-1) && ct==(length_y-1)) {
+		std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_CORN_S_EST;
+	      }
+	      else {
+		std::cout<<"\33["<<origin_y+ct<<";"<<origin_x+i<<"H"<<LIGHT_SOLID_LINE;
+	      }
+	    }
+	    ct += (length_y-1);
+	  }
+	}
+	if(this->frame_List.has_value()) {
+	  // add a Frame.
+	  tmp.id = this->frame_List.value().back().id++;
+	  frame_List.value().push_back(tmp);
+	}
+	else {
+	  // create a Frame.
+	  tmp.id = 0;
+	  std::vector<Frame> ListFrame;
+	  ListFrame.push_back(tmp);
+	  this->frame_List = ListFrame;
+	}
     }
 
     /**
@@ -579,153 +596,153 @@ public:
      *                                       deprecated ?
      */
     void Add_Frame_old(unsigned int origin_x,unsigned int origin_y,unsigned int length_x,
-                       unsigned int length_y,bool visibility)
+	unsigned int length_y,bool visibility)
     {
-        struct Frame tmp;
-        tmp.origin_Pt.x = origin_x;
-        tmp.origin_Pt.y = origin_y;
-        tmp.length_x = length_x;
-        tmp.length_y = length_y;
-        struct point2D pt2d;
-        unsigned int ct = 0;
-        // Trace the two verticals.
-        while(ct<=(length_x-1)) {
-            std::vector<point2D> row;
-            for(unsigned int i=0; i<=(length_y-1); i++) {
-                pt2d.x = origin_x + ct;
-                pt2d.y = origin_y + i;
-                row.push_back(pt2d);
-                if(visibility) {
-                    std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_VERTICAL;
-                }
-            }
-            ct += (length_x-1);
-            tmp.Boundary_box_points_list.push_back(row);
-            row.clear();
-        }
-        ct = 0;
-        // Trace the two horizotals.
-        while(ct<=(length_y-1)) {
-            std::vector<point2D> row;
-            for(unsigned int i=0; i<=(length_x-1); i++) {
-                pt2d.x = origin_x + i;
-                pt2d.y = origin_y + ct;
-                row.push_back(pt2d);
-                if(i==0||i==(length_x-1)) {
-                    tmp.cross_Pt.push_back(&row.back()); //mind the life time.
-                }
-                if(visibility) {
-                    if(i==0 && ct ==0) {
-                        std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_N_WEST;
-                    }
-                    else if(i==(length_x-1) && ct==0) {
-                        std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_N_EST;
-                    }
-                    else if(i==0 && ct==(length_y-1)) {
-                        std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_S_WEST;
-                    }
-                    else if(i==(length_x-1) && ct==(length_y-1)) {
-                        std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_S_EST;
-                    }
-                    else {
-                        std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_LINE;
-                    }
-                }
-            }
-            ct += (length_y-1);
-            tmp.Boundary_box_points_list.push_back(row);
-            row.clear();
-        }
-        if(this->frame_List.has_value()) {
-            // add a Frame.
-            tmp.id = this->frame_List.value().back().id++;
-            frame_List.value().push_back(tmp);
-        }
-        else {
-            // create a Frame.
-            tmp.id = 0;
-            std::vector<Frame> ListFrame;
-            ListFrame.push_back(tmp);
-            this->frame_List = ListFrame;
-        }
+      struct Frame tmp;
+      tmp.origin_Pt.x = origin_x;
+      tmp.origin_Pt.y = origin_y;
+      tmp.length_x = length_x;
+      tmp.length_y = length_y;
+      struct point2D pt2d;
+      unsigned int ct = 0;
+      // Trace the two verticals.
+      while(ct<=(length_x-1)) {
+	std::vector<point2D> row;
+	for(unsigned int i=0; i<=(length_y-1); i++) {
+	  pt2d.x = origin_x + ct;
+	  pt2d.y = origin_y + i;
+	  row.push_back(pt2d);
+	  if(visibility) {
+	    std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_VERTICAL;
+	  }
+	}
+	ct += (length_x-1);
+	tmp.Boundary_box_points_list.push_back(row);
+	row.clear();
+      }
+      ct = 0;
+      // Trace the two horizotals.
+      while(ct<=(length_y-1)) {
+	std::vector<point2D> row;
+	for(unsigned int i=0; i<=(length_x-1); i++) {
+	  pt2d.x = origin_x + i;
+	  pt2d.y = origin_y + ct;
+	  row.push_back(pt2d);
+	  if(i==0||i==(length_x-1)) {
+	    tmp.cross_Pt.push_back(&row.back()); //mind the life time.
+	  }
+	  if(visibility) {
+	    if(i==0 && ct ==0) {
+	      std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_N_WEST;
+	    }
+	    else if(i==(length_x-1) && ct==0) {
+	      std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_N_EST;
+	    }
+	    else if(i==0 && ct==(length_y-1)) {
+	      std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_S_WEST;
+	    }
+	    else if(i==(length_x-1) && ct==(length_y-1)) {
+	      std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_CORN_S_EST;
+	    }
+	    else {
+	      std::cout<<"\33["<<pt2d.y<<";"<<pt2d.x<<"H"<<LIGHT_SOLID_LINE;
+	    }
+	  }
+	}
+	ct += (length_y-1);
+	tmp.Boundary_box_points_list.push_back(row);
+	row.clear();
+      }
+      if(this->frame_List.has_value()) {
+	// add a Frame.
+	tmp.id = this->frame_List.value().back().id++;
+	frame_List.value().push_back(tmp);
+      }
+      else {
+	// create a Frame.
+	tmp.id = 0;
+	std::vector<Frame> ListFrame;
+	ListFrame.push_back(tmp);
+	this->frame_List = ListFrame;
+      }
     }
 
     /// Add a text in a Frame relative to the Frame origin point,
     /// (for that of course a frame have to be created before...)
     void Frame_Add_Text(unsigned short x,unsigned short y,const char * str,size_t id)
     {
-        if (this->frame_List.has_value()) {
-            struct point2D* origin_Pt = &(this->frame_List.value()[id].origin_Pt);
-            std::cout<<"\33["<<origin_Pt->y + y<<";"<<origin_Pt->x + x<<"H"<<str;
-        }
+      if (this->frame_List.has_value()) {
+	struct point2D* origin_Pt = &(this->frame_List.value()[id].origin_Pt);
+	std::cout<<"\33["<<origin_Pt->y + y<<";"<<origin_Pt->x + x<<"H"<<str;
+      }
     }
 
     ///  Draw a Frame based Horizontal line.
     ///  point origin (x,y) + line length + Frame id
     void Frame_Draw_Line_Horiz_basic(unsigned short  x,unsigned short y,
-                                     unsigned short  LineLength,size_t id)
+	unsigned short  LineLength,size_t id)
     {
-        if(this->frame_List.has_value()) {
-            for(unsigned short i = 0; i<=LineLength; i++) {
-                std::cout<<"\33["<<y+this->frame_List.value()[id].origin_Pt.y<<";"<<x +
-                         this->frame_List.value()[id].origin_Pt.x + i<<"H"<<LIGHT_SOLID_LINE;
-            }
-        }
+      if(this->frame_List.has_value()) {
+	for(unsigned short i = 0; i<=LineLength; i++) {
+	  std::cout<<"\33["<<y+this->frame_List.value()[id].origin_Pt.y<<";"<<x +
+	    this->frame_List.value()[id].origin_Pt.x + i<<"H"<<LIGHT_SOLID_LINE;
+	}
+      }
     }
 
     ///  Draw a Frame based Vertical line.
     ///  point origin (x,y) + line length + Frame id
     void Frame_Draw_Line_Verti_basic(unsigned short x,unsigned short y,
-                                     unsigned short LineLength,size_t id)
+	unsigned short LineLength,size_t id)
     {
-        if(this->frame_List.has_value()) {
-            for(unsigned short i = 0; i<=LineLength; i++) {
-                std::cout<<"\33["<<y+this->frame_List.value()[id].origin_Pt.y + i<<";"<<x +
-                         this->frame_List.value()[id].origin_Pt.x <<"H"<<LIGHT_SOLID_VERTICAL;
-            }
-        }
+      if(this->frame_List.has_value()) {
+	for(unsigned short i = 0; i<=LineLength; i++) {
+	  std::cout<<"\33["<<y+this->frame_List.value()[id].origin_Pt.y + i<<";"<<x +
+	    this->frame_List.value()[id].origin_Pt.x <<"H"<<LIGHT_SOLID_VERTICAL;
+	}
+      }
     }
 
 
     ///TODO: will be implemented at the end of the program...
     unsigned short Get_Frame_Memory()
     {
-        if(this->frame_List.has_value()) {
-            unsigned short TotalMemory = this->frame_List.value().capacity() * sizeof this->frame_List.value();
-            for (unsigned short i=0; i<this->frame_List.value().size(); i++) {
-                ///     later.
-            }
-            return TotalMemory;
-        }
-        else {
-            return 0;
-        }
+      if(this->frame_List.has_value()) {
+	unsigned short TotalMemory = this->frame_List.value().capacity() * sizeof this->frame_List.value();
+	for (unsigned short i=0; i<this->frame_List.value().size(); i++) {
+	  ///     later.
+	}
+	return TotalMemory;
+      }
+      else {
+	return 0;
+      }
     }
     /// Switch the terminal in to raw mode and disable the STDIn echo.
     void intoRawMode()
     {
-        struct termios raw;
-        tcgetattr(STDIN_FILENO,&raw);
-        raw.c_lflag &= ~ICANON;
-        raw.c_lflag &= ~ECHO;
-        tcsetattr(STDIN_FILENO,TCSANOW, &raw);
+      struct termios raw;
+      tcgetattr(STDIN_FILENO,&raw);
+      raw.c_lflag &= ~ICANON;
+      raw.c_lflag &= ~ECHO;
+      tcsetattr(STDIN_FILENO,TCSANOW, &raw);
     }
 
     /// Class Destructor.
     ~TermDraw()
     {
-        std::cout<<"...Debug info -> TermDraw class destructor..."<<std::endl;
-        reset_terminal();
-        std::cout<<CURSOR_SHOW;
+      std::cout<<"...Debug info -> TermDraw class destructor..."<<std::endl;
+      reset_terminal();
+      std::cout<<CURSOR_SHOW;
     }
 
 private:
     void reset_terminal()
     {
-        struct termios raw_out;
-        tcgetattr(STDIN_FILENO, &raw_out);
-        raw_out.c_lflag |= ICANON;
-        raw_out.c_lflag |= ECHO;
-        tcsetattr(STDIN_FILENO,2, &raw_out);
+      struct termios raw_out;
+      tcgetattr(STDIN_FILENO, &raw_out);
+      raw_out.c_lflag |= ICANON;
+      raw_out.c_lflag |= ECHO;
+      tcsetattr(STDIN_FILENO,2, &raw_out);
     }
 };
