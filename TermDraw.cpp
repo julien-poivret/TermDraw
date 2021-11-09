@@ -528,7 +528,9 @@ public:
      *
      * A frame let the user to divide the terminal in Frames boxs and allow by this way a relative
      * x & y coordinates from the Frame origin point (corner up left of the targeted id Frame box)
-     *
+     * - the visibility bool flag draw or not the frame border.
+     * - the clear bool flag clear the frame footprint on screen before being drawed 
+     *   in that way the frame is alway on top.
      */
     void Add_Frame(unsigned short origin_x,unsigned short origin_y,
                    unsigned short length_x, unsigned short length_y,bool visibility,bool clear)
