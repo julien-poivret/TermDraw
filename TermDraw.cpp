@@ -102,7 +102,7 @@ struct Cell {
 //   loop update the text content of two grids cell without redrawing the grid cell 
 //   of both data structure.
 //   An id is of course just and index... but having this id(index) stored in the data structure
-//   allow from code to... pattern match the Data structure an find the right id with right data 
+//   allow from code to... pattern match the Data structure an find the right id with the right data 
 //   associet with so that's an id.
 //**********************************************************************************
 struct Grid_Cell {
